@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>六一快乐-to笑笑</title>
+    <!-- Three.js 核心库 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+    <!-- canvas-confetti 轻量彩带 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #ffedf2 0%, #ffd6e4 100%);
+            font-family: 'Segoe UI', 'Poppins', 'Quicksand', -apple-system, 'Helvetica Neue', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+            padding: 1.5rem;
+        }
+
+        /* 背景细闪 */
+        .glitter {
+            position: fixed;
+            background: #fff9fb;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.5;
+            animation: floatGlow 6s infinite alternate;
+        }
+        @keyframes floatGlow {
+            0% { transform: translateY(0px) scale(0.8); opacity: 0.2;}
+            100% { transform: translateY(-30px) scale(1.2); opacity: 0.7;}
+        }
+
+        /* 主卡片 */
+        .gift-card {
+            position: relative;
+            z-index: 20;
+            max-width: 640px;
+            width: 100%;
+            background: rgba(255, 252, 250, 0.94);
+            backdrop-filter: blur(8px);
+            border-radius: 70px;
+            box-shadow: 0 35px 55px rgba(255, 80, 120, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.8), 0 0 0 5px #ffbbcf;
+            padding: 2rem 2rem 2.5rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        /* Kitty 画板 */
+        .kitty-canvas-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        canvas {
+            background: #fff3f7;
+            border-radius: 50%;
+            box-shadow: 0 25px 40px rgba(255, 80, 120, 0.25), 0 0 0 6px #ffffffcc;
+            width: 220px;
+            height: 220px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            position: relative;
+            z-index: 25;
+        }
+        canvas:active {
+            transform: scale(0.97);
+        }
+
+        .charm {
+            position: absolute;
+            top: -8px;
+            right: 8px;
+            font-size: 2.2rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.08));
+            animation: sway 3s infinite alternate ease;
+            pointer-events: none;
+            z-index: 26;
+        }
+        @keyframes sway {
+            0% { transform: rotate(-5deg) translateX(0);}
+            100% { transform: rotate(6deg) translateX(4px);}
+        }
+
+        .title-section {
+            margin: 12px 0 6px;
+        }
+        .main-heading {
+            font-size: 1.9rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #df5a7c, #b53b5c, #ff89a7);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #c45573;
+            background: #fff0f4e0;
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 50px;
+            margin-top: 8px;
+        }
+
+        .blessing-box {
+            background: #ffffffdb;
+            border-radius: 48px;
+            margin: 20px 0 12px;
+            padding: 1.1rem 1.6rem;
+            box-shadow: 0 5px 12px #ffb7c866;
+            border: 1px solid #ffe0e8;
+        }
+        .poem {
+            font-size: 1rem;
+            line-height: 1.48;
+            color: #9f4969;
+            font-weight: 500;
+        }
+        .poem strong {
+            color: #e55a7c;
+            font-weight: 700;
+        }
+        .poem-sign {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            color: #ff90ae;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* 快乐按钮 */
+        .happy-button {
+            background: linear-gradient(120deg, #ff90ae, #ff6b8f);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 28px;
+            border-radius: 60px;
+            cursor: pointer;
+            margin: 16px auto 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 18px #ff90ae80;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            backdrop-filter: blur(2px);
+            z-index: 30;
+            position: relative;
+        }
+        .happy-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 24px #ff6b8faa;
+        }
+        .happy-button:active {
+            transform: scale(0.96);
+        }
+
+        /* 气球区 */
+        .balloon-sky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 25;
+            overflow: hidden;
+        }
+        .floating-balloon {
+            position: absolute;
+            pointer-events: auto;
+            cursor: pointer;
+            font-size: 2.3rem;
+            filter: drop-shadow(0 8px 10px rgba(0,0,0,0.08));
+            transition: transform 0.1s linear;
+            animation: floatUp linear forwards;
+            z-index: 30;
+        }
+        .floating-balloon:hover {
+            transform: scale(1.12);
+            filter: drop-shadow(0 0 12px #ff98bc);
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-120vh) rotate(8deg); opacity: 0.2; }
+        }
+
+        /* 爱心漂浮 */
+        .love-drop {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            font-size: 1.2rem;
+            pointer-events: none;
+            z-index: 999;
+            animation: loveFloat 1.1s ease-out forwards;
+        }
+        @keyframes loveFloat {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.6); }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(1.3); }
+        }
+
+        /* Three.js 烟花容器 */
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @media (max-width: 550px) {
+            .gift-card { padding: 1.4rem 1.2rem 1.8rem; }
+            .main-heading { font-size: 1.55rem; }
+            canvas { width: 180px; height: 180px; }
+            .floating-balloon { font-size: 2rem; }
+            .poem { font-size: 0.9rem; }
+            .happy-button { font-size: 1rem; padding: 10px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="glitterContainer"></div>
+<div class="balloon-sky" id="balloonSky"></div>
+
+<div class="gift-card">
+    <div class="kitty-canvas-wrap">
+        <canvas id="hellokittyCanvas" width="500" height="500" style="width:220px; height:220px;"></canvas>
+        <div class="charm">🎀✨</div>
+    </div>
+    <div class="title-section">
+        <h2 class="main-heading">🎈 六一快乐呀 🎈</h2>
+        <div class="sub">✨ 给爱笑的笑笑同学  ✨</div>
+    </div>
+    <div class="blessing-box">
+        <div class="poem">
+            🌸 愿你拥有 Hello Kitty 一般的温柔坚定，<br>
+            保留那颗不被岁月磨损的童心。<br>
+            <strong>童心不泯，美好长存；自由烂漫，亦知世故。</strong><br>
+            今日儿童节，愿你所遇皆甜，自在发光。 💗
+        </div>
+        <div class="poem-sign">🎀 以纯真之名，予你最好的祝福 🎀</div>
+    </div>
+    
+    <button class="happy-button" id="happyButton">✨ 点击领取快乐 ✨ 🎆</button>
+    
+    <div style="margin-top: 10px; font-size: 0.7rem; opacity: 0.6; color:#ad6b83">
+        🍬 点击 Kitty 有惊喜哦 🎆 🎉
+    </div>
+</div>
+
+<div id="fireworks-canvas"></div>
+
+<script type="module">
+    import * as THREE from 'three';
+
+    // ---------- 真实物理烟花系统：上升 → 爆炸 → 重力坠落，多爆炸点，停留时间约5-6秒 ----------
+    let activeFirework = null;
+    let animFrame = null;
+
+    function createRealisticFirework() {
+        if (activeFirework) {
+            if (animFrame) cancelAnimationFrame(animFrame);
+            if (activeFirework.domElement && activeFirework.domElement.parentNode) activeFirework.domElement.parentNode.removeChild(activeFirework.domElement);
+            if (activeFirework.dispose) activeFirework.dispose();
+            activeFirework = null;
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = null;
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 18);
+        camera.lookAt(0, 2, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+        const container = document.getElementById('fireworks-canvas');
+        while (container.firstChild) container.removeChild(container.firstChild);
+        container.appendChild(renderer.domElement);
+        
+        // 定义多个爆炸点 (全屏范围，3D坐标 x:-7~7, y:0~6, z:-5~5)
+        const explosionPoints = [
+            { x: -4.5, y: 3.8, z: -1.5 },
+            { x: 4.2, y: 4.0, z: -1 },
+            { x: 0, y: 5.2, z: -2 },
+            { x: -3.2, y: 2.5, z: 1.2 },
+            { x: 3.8, y: 2.0, z: 0.8 },
+            { x: -5.5, y: 1.5, z: 2 },
+            { x: 5.0, y: 3.2, z: -0.5 },
+            { x: -1.5, y: 4.5, z: 2.5 },
+            { x: 2.2, y: 5.0, z: -1.8 },
+            { x: 0, y: 1.2, z: 3 }
+        ];
+        
+        const particlesPerPoint = 200;
+        let allParticles = [];
+        
+        // 颜色池
+        const colors = ['#ff4d6d', '#ff8aae', '#ffc2d6', '#ffd966', '#c77dff', '#ff6b8f', '#ffb347', '#f9c74f', '#ff85a1', '#9d4ed7'];
+        
+        // 为每个爆炸点生成粒子，模拟真实爆炸：粒子速度随机、重力影响
+        for (let ep of explosionPoints) {
+            for (let i = 0; i < particlesPerPoint; i++) {
+                // 随机方向 (球面均匀分布)
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                const speed = 3 + Math.random() * 7;
+                const vx = Math.sin(phi) * Math.cos(theta) * speed;
+                const vy = Math.sin(phi) * Math.sin(theta) * speed;
+                const vz = Math.cos(phi) * speed;
+                // 随机大小
+                const size = 0.18 + Math.random() * 0.32;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                allParticles.push({
+                    pos: new THREE.Vector3(ep.x, ep.y, ep.z),
+                    vel: new THREE.Vector3(vx, vy, vz),
+                    color: color,
+                    size: size,
+                    life: 1.0,
+                    drag: 0.98,
+                    gravity: -0.25   // 较强重力，自然坠落
+                });
+            }
+        }
+        
+        const totalParticles = allParticles.length;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(totalParticles * 3);
+        const colorsAttr = new Float32Array(totalParticles * 3);
+        const sizesAttr = new Float32Array(totalParticles);
+        
+        for (let i = 0; i < totalParticles; i++) {
+            const p = allParticles[i];
+            positions[i*3] = p.pos.x;
+            positions[i*3+1] = p.pos.y;
+            positions[i*3+2] = p.pos.z;
+            const col = new THREE.Color(p.color);
+            colorsAttr[i*3] = col.r;
+            colorsAttr[i*3+1] = col.g;
+            colorsAttr[i*3+2] = col.b;
+            sizesAttr[i] = p.size;
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colorsAttr, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizesAttr, 1));
+        
+        const vertexShader = `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            void main() {
+                vColor = color;
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * ( 280.0 / - mvPosition.z );
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+        const fragmentShader = `
+            varying vec3 vColor;
+            void main() {
+                vec2 coord = gl_PointCoord;
+                float dist = length(coord - vec2(0.5));
+                if (dist > 0.5) discard;
+                float glow = (1.0 - smoothstep(0.1, 0.5, dist)) * 0.95;
+                gl_FragColor = vec4(vColor, glow);
+            }
+        `;
+        const material = new THREE.ShaderMaterial({
+            uniforms: {},
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+        
+        let startTime = performance.now();
+        let lastTime = startTime;
+        let active = true;
+        
+        function animate() {
+            if (!active) return;
+            const now = performance.now();
+            let dt = Math.min(0.033, (now - lastTime) / 1000);
+            lastTime = now;
+            
+            let anyAlive = false;
+            for (let i = 0; i < allParticles.length; i++) {
+                const p = allParticles[i];
+                if (p.life <= 0) continue;
+                anyAlive = true;
+                // 速度阻尼
+                p.vel.x *= p.drag;
+                p.vel.z *= p.drag;
+                p.vel.y *= p.drag;
+                // 重力影响
+                p.vel.y += p.gravity * dt;
+                p.pos.x += p.vel.x * dt;
+                p.pos.y += p.vel.y * dt;
+                p.pos.z += p.vel.z * dt;
+                p.life -= dt * 0.85;  // 逐渐消失
+                // 更新位置和大小
+                geometry.attributes.position.setXYZ(i, p.pos.x, p.pos.y, p.pos.z);
+                const scale = Math.min(1.0, p.life * 1.2);
+                geometry.attributes.size.setX(i, p.size * scale);
+            }
+            geometry.attributes.position.needsUpdate = true;
+            geometry.attributes.size.needsUpdate = true;
+            
+            // 轻微相机晃动
+            camera.position.x += (0 - camera.position.x) * 0.06;
+            camera.position.y += (1.5 - camera.position.y) * 0.06;
+            camera.lookAt(0, 2, 0);
+            
+            renderer.render(scene, camera);
+            
+            const elapsed = (now - startTime) / 1000;
+            if (anyAlive && elapsed < 6.0) {
+                animFrame = requestAnimationFrame(animate);
+            } else {
+                active = false;
+                if (animFrame) cancelAnimationFrame(animFrame);
+                if (renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
+                renderer.dispose();
+                activeFirework = null;
+                animFrame = null;
+            }
+        }
+        
+        animFrame = requestAnimationFrame(animate);
+        activeFirework = {
+            domElement: renderer.domElement,
+            dispose: () => { active = false; if (animFrame) cancelAnimationFrame(animFrame); renderer.dispose(); }
+        };
+        
+        const onResize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+        window.addEventListener('resize', onResize);
+        activeFirework.resizeHandler = onResize;
+    }
+    
+    window.trigger3DFirework = createRealisticFirework;
+</script>
+
+<script type="text/javascript">
+    (function() {
+        // ========== Hello Kitty 绘制 (双眼完整) ==========
+        const canvas = document.getElementById('hellokittyCanvas');
+        const ctx = canvas.getContext('2d');
+        const size = 500;
+        canvas.width = size;
+        canvas.height = size;
+        canvas.style.width = '220px';
+        canvas.style.height = '220px';
+        
+        let eyeOpen = true;
+        
+        function drawKitty(openEyes) {
+            ctx.clearRect(0, 0, size, size);
+            ctx.save();
+            ctx.shadowBlur = 0;
+            const cx = size/2;
+            const cy = size/2 + 8;
+            const r = 172;
+            
+            // 脸部
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
+            ctx.fillStyle = '#FEF7F0';
+            ctx.fill();
+            ctx.strokeStyle = '#FFBACA';
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+            
+            // 耳朵
+            ctx.beginPath();
+            ctx.moveTo(cx - 108, cy - 126);
+            ctx.quadraticCurveTo(cx - 165, cy - 215, cx - 46, cy - 170);
+            ctx.fillStyle = '#FFC8D8';
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx - 95, cy - 138);
+            ctx.quadraticCurveTo(cx - 130, cy - 192, cx - 58, cy - 162);
+            ctx.fillStyle = '#FFB2CA';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(cx + 108, cy - 126);
+            ctx.quadraticCurveTo(cx + 165, cy - 215, cx + 46, cy - 170);
+            ctx.fillStyle = '#FFC8D8';
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 95, cy - 138);
+            ctx.quadraticCurveTo(cx + 130, cy - 192, cx + 58, cy - 162);
+            ctx.fillStyle = '#FFB2CA';
+            ctx.fill();
+            
+            // 蝴蝶结
+            ctx.beginPath();
+            ctx.ellipse(cx - 32, cy - 175, 28, 26, -0.15, 0, Math.PI*2);
+            ctx.fillStyle = '#E3426C';
+            ctx.fill();
+            ctx.fillStyle = '#C22E55';
+            ctx.beginPath();
+            ctx.ellipse(cx - 34, cy - 180, 18, 20, -0.1, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 68, cy - 185);
+            ctx.quadraticCurveTo(cx - 110, cy - 208, cx - 102, cy - 170);
+            ctx.quadraticCurveTo(cx - 72, cy - 152, cx - 48, cy - 168);
+            ctx.fillStyle = '#E3426C';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 58, cy - 177);
+            ctx.quadraticCurveTo(cx - 78, cy - 162, cx - 92, cy - 174);
+            ctx.fillStyle = '#FF789A';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 190);
+            ctx.quadraticCurveTo(cx + 18, cy - 212, cx + 8, cy - 172);
+            ctx.quadraticCurveTo(cx - 12, cy - 156, cx - 26, cy - 170);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 18, cy - 182);
+            ctx.quadraticCurveTo(cx - 6, cy - 166, cx + 4, cy - 178);
+            ctx.fillStyle = '#FF789A';
+            ctx.fill();
+            
+            // 双眼
+            const eyeY = cy - 35;
+            const leftX = cx - 58;
+            const rightX = cx + 58;
+            if (openEyes) {
+                ctx.beginPath();
+                ctx.ellipse(leftX, eyeY, 17, 22, 0, 0, Math.PI*2);
+                ctx.fillStyle = '#2D1E24';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(leftX - 6, eyeY - 6, 6, 8, 0, 0, Math.PI*2);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(leftX - 10, eyeY - 8, 2, 3, 0, 0, Math.PI*2);
+                ctx.fillStyle = '#F0F0FF';
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.ellipse(rightX, eyeY, 17, 22, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(rightX - 6, eyeY - 6, 6, 8, 0, 0, Math.PI*2);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(rightX - 10, eyeY - 8, 2, 3, 0, 0, Math.PI*2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.ellipse(leftX, eyeY + 3, 16, 9, 0.1, 0, Math.PI, true);
+                ctx.lineWidth = 4.2;
+                ctx.strokeStyle = '#422D36';
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(rightX, eyeY + 3, 16, 9, 0.1, 0, Math.PI, true);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.ellipse(leftX - 20, eyeY + 12, 12, 7, 0, 0, Math.PI*2);
+                ctx.fillStyle = '#FFB0C4';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(rightX + 20, eyeY + 12, 12, 7, 0, 0, Math.PI*2);
+                ctx.fill();
+            }
+            
+            // 鼻子
+            ctx.beginPath();
+            ctx.ellipse(cx - 2, cy + 5, 13, 11, 0, 0, Math.PI*2);
+            ctx.fillStyle = '#F2C94C';
+            ctx.fill();
+            ctx.fillStyle = '#E2A526';
+            ctx.beginPath();
+            ctx.ellipse(cx - 4, cy + 3, 4, 3.5, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 胡须
+            ctx.beginPath();
+            ctx.lineWidth = 2.1;
+            ctx.strokeStyle = '#AD7B8C';
+            ctx.moveTo(cx - 85, cy + 2); ctx.lineTo(cx - 148, cy - 10);
+            ctx.moveTo(cx - 87, cy + 12); ctx.lineTo(cx - 156, cy + 8);
+            ctx.moveTo(cx - 85, cy + 22); ctx.lineTo(cx - 146, cy + 28);
+            ctx.moveTo(cx + 85, cy + 2); ctx.lineTo(cx + 148, cy - 10);
+            ctx.moveTo(cx + 87, cy + 12); ctx.lineTo(cx + 156, cy + 8);
+            ctx.moveTo(cx + 85, cy + 22); ctx.lineTo(cx + 146, cy + 28);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.ellipse(cx - 98, cy + 30, 13, 8, 0, 0, Math.PI*2);
+            ctx.fillStyle = '#FFBACE';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx + 98, cy + 30, 13, 8, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.font = `32px "Segoe UI Emoji"`;
+            ctx.fillStyle = '#FFD89C';
+            ctx.fillText("🌸", cx - 28, cy - 105);
+            ctx.fillText("⭐", cx + 18, cy - 112);
+            ctx.restore();
+        }
+        
+        drawKitty(true);
+        setInterval(() => {
+            drawKitty(false);
+            setTimeout(() => drawKitty(true), 180);
+        }, 3600);
+        
+        // 糖果雨
+        function fullScreenCandyRain() {
+            const candyColors = ['#FF69B4', '#FFB6C1', '#FFD700', '#98FB98', '#FFA07A', '#E6E6FA', '#FFDAB9', '#F0E68C', '#FFB347', '#D291BC'];
+            for (let w = 0; w < 3; w++) setTimeout(() => {
+                for (let i = 0; i < 12; i++) canvasConfetti({ particleCount: 28, angle: 90, spread: 55, origin: { x: Math.random(), y: 0 }, startVelocity: 10 + Math.random() * 7, gravity: 1.1, colors: candyColors, ticks: 200, scalar: 0.9 });
+            }, w * 180);
+            setTimeout(() => {
+                for (let j = 0; j < 20; j++) setTimeout(() => canvasConfetti({ particleCount: 22, angle: 90, spread: 70, origin: { x: Math.random(), y: 0 }, startVelocity: 12, gravity: 1.0, colors: candyColors, ticks: 210, scalar: 0.85 }), j * 35);
+            }, 300);
+            setTimeout(() => canvasConfetti({ particleCount: 300, spread: 130, origin: { y: 0 }, startVelocity: 14, gravity: 0.9, colors: candyColors, ticks: 220, scalar: 0.7 }), 700);
+        }
+        
+        // 普通烟花
+        function normalFirework(x, y) {
+            const ox = x / window.innerWidth;
+            const oy = y / window.innerHeight;
+            canvasConfetti({ particleCount: 120, spread: 100, startVelocity: 24, origin: { x: ox, y: oy }, colors: ['#FF4D6D', '#FF8AAE', '#FFC2D6', '#FFE5B4', '#C77DFF', '#9D4EDD', '#F9C74F'], decay: 0.9 });
+            setTimeout(() => canvasConfetti({ particleCount: 70, spread: 80, startVelocity: 18, origin: { x: ox, y: oy }, colors: ['#FFB347', '#FF85A1', '#BDE0FE', '#FFAFCC', '#A0D2EB'], decay: 0.92 }), 70);
+            setTimeout(() => canvasConfetti({ particleCount: 45, spread: 55, startVelocity: 12, origin: { x: ox, y: oy }, colors: ['#F9F3B0', '#FFC8DD', '#D291BC'], decay: 0.95 }), 140);
+        }
+        
+        function createLoveHeart() {
+            const d = document.createElement('div');
+            d.className = 'love-drop';
+            const arr = ['💖', '💗', '🌸', '🎀', '🐱', '🍰', '🍬'];
+            d.innerHTML = arr[Math.floor(Math.random() * arr.length)];
+            d.style.left = Math.random() * 80 + 10 + '%';
+            d.style.fontSize = 1 + Math.random() * 1.2 + 'rem';
+            document.body.appendChild(d);
+            setTimeout(() => d.remove(), 1200);
+        }
+        
+        // Kitty 点击糖果雨
+        canvas.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fullScreenCandyRain();
+            for (let i = 0; i < 10; i++) setTimeout(() => createLoveHeart(), i * 60);
+            drawKitty(false);
+            setTimeout(() => drawKitty(true), 200);
+            if (window.addOneBalloon) window.addOneBalloon();
+        });
+        
+        // 点击其他位置普通烟花
+        document.addEventListener('click', (e) => {
+            const t = e.target;
+            const isCanvas = t === canvas;
+            const isBtn = t.id === 'happyButton' || (t.parentElement && t.parentElement.id === 'happyButton');
+            const isBalloon = (t.classList && t.classList.contains('floating-balloon')) || (t.parentElement && t.parentElement.classList && t.parentElement.classList.contains('floating-balloon'));
+            if (isCanvas || isBalloon || isBtn) return;
+            normalFirework(e.clientX, e.clientY);
+        });
+        
+        // 快乐按钮：真实3D烟花
+        const btn = document.getElementById('happyButton');
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.trigger3DFirework) window.trigger3DFirework();
+            for (let i = 0; i < 15; i++) setTimeout(() => createLoveHeart(), i * 70);
+        });
+        
+        // 气球系统
+        const balloonArea = document.getElementById('balloonSky');
+        let activeBalloons = 0;
+        const MAX_BALLOON = 30;
+        const icons = ['🐱', '🎀', '🌸', '🍬', '🍰', '💖', '🎂', '🐈', '🎈', '✨', '🍭', '💝', '🐾', '🌟', '🎵'];
+        function randIcon() { return icons[Math.floor(Math.random() * icons.length)]; }
+        function createBalloon() {
+            if (activeBalloons >= MAX_BALLOON) return;
+            const b = document.createElement('div');
+            b.className = 'floating-balloon';
+            b.innerHTML = randIcon();
+            b.style.fontSize = (1.8 + Math.random() * 1.6) + 'rem';
+            b.style.left = Math.random() * 92 + '%';
+            b.style.animationDuration = (5 + Math.random() * 6) + 's';
+            b.style.animationDelay = Math.random() * 1.5 + 's';
+            b.style.transform = `rotate(${Math.random() * 12 - 6}deg)`;
+            b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                canvasConfetti({ particleCount: 45, spread: 55, origin: { x: parseFloat(b.style.left)/100, y: 0.7 }, startVelocity: 16, colors: ['#FFB3CA', '#FFDAB9', '#FF8DA1'] });
+                for (let i=0;i<4;i++) setTimeout(() => createLoveHeart(), i*40);
+                b.remove();
+                activeBalloons--;
+            });
+            b.addEventListener('animationend', () => { b.remove(); activeBalloons--; });
+            balloonArea.appendChild(b);
+            activeBalloons++;
+        }
+        setInterval(() => {
+            if (activeBalloons < MAX_BALLOON) { createBalloon(); if (Math.random() < 0.2) setTimeout(createBalloon, 150); }
+        }, 1050);
+        window.addOneBalloon = () => { if (activeBalloons < MAX_BALLOON) createBalloon(); };
+        
+        // 背景闪粉
+        function initGlitter() {
+            const c = document.getElementById('glitterContainer');
+            for (let i=0;i<50;i++) {
+                const s = document.createElement('div');
+                s.classList.add('glitter');
+                let w = 2 + Math.random() * 5;
+                s.style.width = w + 'px';
+                s.style.height = w + 'px';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.top = Math.random() * 100 + '%';
+                s.style.animationDelay = Math.random() * 5 + 's';
+                s.style.animationDuration = 2.5 + Math.random() * 4 + 's';
+                c.appendChild(s);
+            }
+        }
+        initGlitter();
+        
+        window.addEventListener('load', () => {
+            canvasConfetti({ particleCount: 180, spread: 80, origin: { y: 0.6 }, startVelocity: 22, colors: ['#FF9EC0', '#FFBACD', '#FFD966', '#FF93B3'] });
+            for (let i=0;i<6;i++) setTimeout(() => createBalloon(), i * 150);
+        });
+    })();
+</script>
+</body>
+</html>
